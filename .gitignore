@@ -1,0 +1,72 @@
+# .gitignore
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/.env
+backend/venv/
+backend/env/
+backend/ENV/
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+backend/uploads/
+backend/.vscode/
+backend/.idea/
+backend/*.log
+backend/dist/
+backend/build/
+backend/*.egg-info/
+
+# Frontend
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/dist/
+frontend/build/
+frontend/.DS_Store
+frontend/.vscode/
+frontend/.idea/
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp
+frontend/.pnp.js
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Misc
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+.coverage
+htmlcov/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.tox/
