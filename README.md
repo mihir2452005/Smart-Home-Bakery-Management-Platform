@@ -1,0 +1,1 @@
+# Smart-Home-Bakery-Management-Platform
