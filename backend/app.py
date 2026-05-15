@@ -217,3 +217,6 @@ if __name__ == '__main__':
         port=app.config.get('SERVER_PORT', 5000),
         debug=app.config.get('DEBUG', True)
     )
+
+# Create the app instance for Gunicorn
+app = create_app()
