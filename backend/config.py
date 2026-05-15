@@ -115,6 +115,13 @@ class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
     SESSION_COOKIE_SECURE = True
+    # Enforce HTTPS in production
+    PREFERRED_URL_SCHEME = 'https'
+    # Add security headers
+    PROPAGATE_EXCEPTIONS = True
+    PRESERVE_CONTEXT_ON_EXCEPTION = False
+    # Better error logging
+    JSON_SORT_KEYS = False
 
 
 # Configuration dictionary
