@@ -1,1 +1,1 @@
-export { NotFoundPage as default } from './index.js';
+export { NotFoundPage as default } from './index.jsx';

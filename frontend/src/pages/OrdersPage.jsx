@@ -1,1 +1,1 @@
-export { OrdersPage as default } from './index.js';
+export { OrdersPage as default } from './index.jsx';

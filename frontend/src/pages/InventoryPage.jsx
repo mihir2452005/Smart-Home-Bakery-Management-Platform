@@ -1,1 +1,1 @@
-export { InventoryPage as default } from './index.js';
+export { InventoryPage as default } from './index.jsx';
