@@ -1,9 +1,58 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Cake, Sparkles, TrendingUp, Package, Users, Zap, BarChart3, Coffee } from 'lucide-react';
+import { initiatePayment, loadRazorpayScript } from '../services/paymentService';
+import toast from 'react-hot-toast';
 
-const HomePage = () => (
-  <div className="min-h-screen bg-white dark:bg-gray-900">
+const HomePage = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  const handlePricingClick = async (plan) => {
+    if (plan === 'hobby') {
+      // Free tier - go to register
+      navigate('/register');
+      return;
+    }
+
+    if (plan === 'enterprise') {
+      // Enterprise - show contact form
+      toast.success('Please contact our sales team');
+      return;
+    }
+
+    // Paid plans - initiate payment
+    setLoading(true);
+    try {
+      await loadRazorpayScript();
+
+      // Get user data from localStorage or session
+      const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
+      const userName = localStorage.getItem('userName') || 'Home Baker';
+      const userPhone = localStorage.getItem('userPhone') || '9876543210';
+      const userId = localStorage.getItem('userId') || 1;
+
+      const planDetails = {
+        plan: plan,
+        amount: plan === 'professional' ? 29900 : 0, // Amount in paise
+        description: plan === 'professional' ? 'Professional Plan - ₹299/month' : '',
+        email: userEmail,
+        name: userName,
+        phone: userPhone,
+        userId: userId,
+      };
+
+      await initiatePayment(planDetails);
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Payment initiation failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-gray-900">
     {/* Navigation Bar */}
     <nav className="backdrop-blur-md bg-white/80 dark:bg-gray-900/80 sticky top-0 z-50 border-b border-pink-100 dark:border-pink-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -168,8 +217,12 @@ const HomePage = () => (
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Hobby Baker</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">Perfect to start</p>
             <p className="text-4xl font-bold text-gray-900 dark:text-white mb-6"><span className="text-lg">₹</span>0<span className="text-lg">/mo</span></p>
-            <button className="w-full py-3 border-2 border-pink-500 text-pink-600 dark:text-pink-400 rounded-full font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 transition mb-6">
-              Get Started
+            <button 
+              onClick={() => handlePricingClick('hobby')}
+              disabled={loading}
+              className="w-full py-3 border-2 border-pink-500 text-pink-600 dark:text-pink-400 rounded-full font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 transition mb-6 disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Get Started'}
             </button>
             <ul className="space-y-3 text-left">
               <li className="text-gray-700 dark:text-gray-400">✓ 10 Recipe Generations</li>
@@ -183,8 +236,12 @@ const HomePage = () => (
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Professional</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">For growing businesses</p>
             <p className="text-4xl font-bold text-gray-900 dark:text-white mb-6"><span className="text-lg">₹</span>299<span className="text-lg">/mo</span></p>
-            <button className="w-full py-3 bg-gradient-to-r from-pink-500 to-yellow-500 text-white rounded-full font-bold hover:shadow-lg transition mb-6">
-              Start Free Trial
+            <button 
+              onClick={() => handlePricingClick('professional')}
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-pink-500 to-yellow-500 text-white rounded-full font-bold hover:shadow-lg transition mb-6 disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Start Free Trial'}
             </button>
             <ul className="space-y-3 text-left">
               <li className="text-gray-700 dark:text-gray-400">✓ Unlimited Recipes</li>
@@ -198,8 +255,12 @@ const HomePage = () => (
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Enterprise</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">For teams</p>
             <p className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Custom</p>
-            <button className="w-full py-3 border-2 border-pink-500 text-pink-600 dark:text-pink-400 rounded-full font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 transition mb-6">
-              Contact Sales
+            <button 
+              onClick={() => handlePricingClick('enterprise')}
+              disabled={loading}
+              className="w-full py-3 border-2 border-pink-500 text-pink-600 dark:text-pink-400 rounded-full font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 transition mb-6 disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Contact Sales'}
             </button>
             <ul className="space-y-3 text-left">
               <li className="text-gray-700 dark:text-gray-400">✓ Everything in Pro</li>
@@ -264,6 +325,7 @@ const HomePage = () => (
       </div>
     </footer>
   </div>
-);
+  );
+};
 
 export default HomePage;

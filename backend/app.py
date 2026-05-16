@@ -71,6 +71,7 @@ def register_blueprints(app):
     from routes.ai import ai_bp
     from routes.expenses import expenses_bp
     from routes.market_rates import market_rates_bp
+    from routes.payments import payments_bp
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -81,6 +82,7 @@ def register_blueprints(app):
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
     app.register_blueprint(expenses_bp, url_prefix='/api/expenses')
     app.register_blueprint(market_rates_bp, url_prefix='/api/market-rates')
+    app.register_blueprint(payments_bp, url_prefix='/api/payments')
     
     @app.route('/api/health', methods=['GET'])
     def health_check():

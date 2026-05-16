@@ -321,3 +321,20 @@ class Feedback(db.Model):
     comment = db.Column(db.Text)
     category = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Subscription(db.Model):
+    """Subscription - User subscription plans"""
+    __tablename__ = 'subscriptions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    plan = db.Column(db.String(50), default='hobby')  # 'hobby', 'professional', 'enterprise'
+    status = db.Column(db.String(50), default='active')  # 'active', 'cancelled', 'expired'
+    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    expiry_date = db.Column(db.DateTime, nullable=False)
+    razorpay_payment_id = db.Column(db.String(100))
+    razorpay_order_id = db.Column(db.String(100))
+    cancellation_date = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
