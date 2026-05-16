@@ -3,7 +3,7 @@
  * Main analytics and profit dashboard
  */
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStore } from '../services/store';
 import { dashboardAPI } from '../services/api';
 import { TrendingUp, Package, ShoppingCart, DollarSign } from 'lucide-react';
