@@ -3,6 +3,8 @@
  * These components need to be expanded with full functionality
  */
 
+import React from 'react';
+
 // LoginPage
 export const LoginPage = () => (
   <div className="min-h-screen bg-gradient-to-br from-pink-500 to-yellow-400 flex items-center justify-center p-4">
