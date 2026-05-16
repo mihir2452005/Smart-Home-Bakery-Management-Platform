@@ -103,7 +103,7 @@ const ExpensesPage = () => {
                   <td className="p-4 text-sm">{exp.expense_date}</td>
                   <td className="p-4">
                     <span className="badge badge-primary">{exp.category}</span>
-                  </td}
+                    </td>
                   <td className="p-4 text-gray-600 dark:text-gray-400">{exp.description}</td>
                   <td className="p-4 font-bold text-red-500">₹{exp.amount}</td>
                   <td className="p-4">
