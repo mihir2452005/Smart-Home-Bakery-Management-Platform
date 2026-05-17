@@ -138,11 +138,6 @@ export const initiatePayment = async (planDetails) => {
         });
 
         const verifyData = await verifyResponse.json();
-            plan: planDetails.plan,
-          }),
-        });
-
-        const verifyData = await verifyResponse.json();
         return verifyData;
       },
       modal: {
