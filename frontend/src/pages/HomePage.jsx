@@ -1,53 +1,157 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Cake, Sparkles, TrendingUp, Package, Users, Zap, BarChart3, Coffee } from 'lucide-react';
-import { initiatePayment, loadRazorpayScript } from '../services/paymentService';
+import { Cake, Sparkles, TrendingUp, Package, Users, Zap, BarChart3, Coffee, X } from 'lucide-react';
+import { loadRazorpayScript } from '../services/paymentService';
 import toast from 'react-hot-toast';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [checkoutData, setCheckoutData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+  });
 
-  const handlePricingClick = async (plan) => {
+  const handlePricingClick = (plan) => {
     if (plan === 'hobby') {
-      // Free tier - go to register
       navigate('/register');
       return;
     }
 
     if (plan === 'enterprise') {
-      // Enterprise - show contact form
       toast.success('Please contact our sales team');
       return;
     }
 
-    // Paid plans - initiate payment
+    // Show checkout form for paid plan
+    setSelectedPlan(plan);
+    setShowCheckout(true);
+  };
+
+  const handleCheckoutSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!checkoutData.name || !checkoutData.email || !checkoutData.phone) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
     setLoading(true);
+
     try {
-      await loadRazorpayScript();
+      // Load Razorpay script
+      if (!window.Razorpay) {
+        await loadRazorpayScript();
+      }
 
-      // Get user data from localStorage or session
-      const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
-      const userName = localStorage.getItem('userName') || 'Home Baker';
-      const userPhone = localStorage.getItem('userPhone') || '9876543210';
-      const userId = localStorage.getItem('userId') || 1;
+      const API_URL = process.env.REACT_APP_API_URL || 'https://cake-backend.onrender.com';
 
-      const planDetails = {
-        plan: plan,
-        amount: plan === 'professional' ? 29900 : 0, // Amount in paise
-        description: plan === 'professional' ? 'Professional Plan - ₹299/month' : '',
-        email: userEmail,
-        name: userName,
-        phone: userPhone,
-        userId: userId,
+      // Create order
+      const orderResponse = await fetch(`${API_URL}/api/payments/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: selectedPlan,
+          amount: selectedPlan === 'professional' ? 29900 : 0,
+          email: checkoutData.email,
+          phone: checkoutData.phone,
+          name: checkoutData.name,
+          isGuest: true,
+        }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderData.data && !orderData.orderId) {
+        throw new Error(orderData.message || 'Failed to create order');
+      }
+
+      const orderId = orderData.data?.orderId || orderData.orderId;
+
+      // Open Razorpay payment gateway
+      const options = {
+        key: process.env.REACT_APP_RAZORPAY_KEY || 'rzp_test_1DP5mmOlF5G5ag',
+        amount: orderData.data?.amount || orderData.amount,
+        currency: 'INR',
+        name: 'Cake Hub',
+        description: `${selectedPlan} Plan - ₹${selectedPlan === 'professional' ? '299' : '0'}/month`,
+        order_id: orderId,
+        image: '/cake-logo.png',
+        prefill: {
+          name: checkoutData.name,
+          email: checkoutData.email,
+          contact: checkoutData.phone,
+        },
+        theme: {
+          color: '#ec4899',
+        },
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+        },
+        handler: async (response) => {
+          try {
+            // Verify payment
+            const verifyResponse = await fetch(`${API_URL}/api/payments/verify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                plan: selectedPlan,
+                email: checkoutData.email,
+                isGuest: true,
+              }),
+            });
+
+            const verifyData = await verifyResponse.json();
+
+            if (verifyData.status === 'success' || verifyData.data) {
+              toast.success('Payment successful! Redirecting...');
+              setShowCheckout(false);
+              setCheckoutData({ name: '', email: '', phone: '' });
+              
+              // Store user data and redirect
+              setTimeout(() => {
+                localStorage.setItem('userEmail', checkoutData.email);
+                localStorage.setItem('userName', checkoutData.name);
+                navigate('/register');
+              }, 1500);
+            } else {
+              toast.error('Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Verification error:', error);
+            toast.error('Verification failed: ' + error.message);
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast.info('Payment cancelled');
+          },
+        },
       };
 
-      await initiatePayment(planDetails);
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Payment initiation failed. Please try again.');
-    } finally {
+      toast.error('Error: ' + error.message);
       setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-gray-900">
     }
   };
 
@@ -324,6 +428,110 @@ const HomePage = () => {
         </div>
       </div>
     </footer>
+
+    {/* Checkout Modal */}
+    {showCheckout && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full">
+          {/* Header */}
+          <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Upgrade to {selectedPlan?.charAt(0).toUpperCase() + selectedPlan?.slice(1)}
+            </h2>
+            <button
+              onClick={() => {
+                setShowCheckout(false);
+                setCheckoutData({ name: '', email: '', phone: '' });
+              }}
+              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleCheckoutSubmit} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                required
+                value={checkoutData.name}
+                onChange={(e) =>
+                  setCheckoutData({ ...checkoutData, name: e.target.value })
+                }
+                placeholder="Your name"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={checkoutData.email}
+                onChange={(e) =>
+                  setCheckoutData({ ...checkoutData, email: e.target.value })
+                }
+                placeholder="your@email.com"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                required
+                value={checkoutData.phone}
+                onChange={(e) =>
+                  setCheckoutData({ ...checkoutData, phone: e.target.value })
+                }
+                placeholder="9876543210"
+                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+
+            {/* Price Display */}
+            <div className="bg-pink-50 dark:bg-pink-900/20 p-4 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount:</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                ₹{selectedPlan === 'professional' ? '299' : '0'}
+                <span className="text-sm text-gray-600 dark:text-gray-400">/month</span>
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCheckout(false);
+                  setCheckoutData({ name: '', email: '', phone: '' });
+                }}
+                className="flex-1 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 py-2 bg-gradient-to-r from-pink-500 to-yellow-500 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Processing...' : 'Proceed to Payment'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
   </div>
   );
 };
